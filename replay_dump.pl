@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use lib '.';
-use Replay;
+use Replay ':enums';
 
 my $file = shift @ARGV;
 my $replay = Replay->from_file($file);

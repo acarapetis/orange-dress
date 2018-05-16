@@ -4,6 +4,7 @@ package Replay;
 
 use warnings;
 use strict;
+use base 'Exporter'
 use List::MoreUtils qw(natatime);
 use UUID;
 
@@ -30,6 +31,30 @@ use constant {
     REPLAY_FLAG_COMPRESSION_GZIP =>   0,
     REPLAY_FLAG_COMPRESSION_NONE =>   1,
 };
+
+our %EXPORT_TAGS = (enums => [
+    GAME_RESULT_MISSIONS_WIN,
+    GAME_RESULT_SPY_TIMEOUT,
+    GAME_RESULT_SPY_SHOT,
+    GAME_RESULT_CIVILIAN_SHOT,
+    GAME_RESULT_IN_PROGRESS,
+    NUM_GAME_RESULTS,
+    GAME_TYPE_KNOWN,
+    GAME_TYPE_PICK,
+    GAME_TYPE_ANY,
+    NUM_GAME_TYPES,
+    GAME_TYPE_INVALID,
+    GAME_TYPE_PACKED_BITS,
+    GAME_TYPE_PACKED_SHIFT,
+
+    FLAGS_VERSION_MASK,
+    FLAGS_VERSION,
+    FLAGS_BEGINNER_MODE,
+
+    REPLAY_FLAG_COMPRESSION_MASK,
+    REPLAY_FLAG_COMPRESSION_GZIP,
+    REPLAY_FLAG_COMPRESSION_NONE,
+]);
 
 use constant FORMAT => [
     ReplayFile4CC => 'a4',
@@ -75,6 +100,9 @@ sub from_file {
         $self->{$name} = unpack($format, $bytes);
     }
 
+    $self->{ReplayFile4CC} eq 'RPLY'
+        or die 'Not a SpyParty Replay!';
+
     read $fh, my $spyname, $self->{SpyNameLength};
     read $fh, my $snipername, $self->{SniperNameLength};
 
@@ -84,6 +112,23 @@ sub from_file {
 
     close $fh;
     bless $self, $class;
+}
+
+sub result_winner {
+    my $self = shift;
+    return 'spy' if $self->{Result} == GAME_RESULT_MISSIONS_WIN 
+        or $self->{Result} == GAME_RESULT_CIVILIAN_SHOT);
+    return 'sniper' if $self->{Result} == GAME_RESULT_SPY_SHOT
+        or $self->{Result} == GAME_RESULT_SPY_TIMEOUT);
+    return 'incomplete';
+}
+
+sub winner_name {
+    my $self = shift;
+    my $result = $self->result_winner();
+    return $self->{SpyName} if $result eq 'spy';
+    return $self->{SniperName} if $result eq 'sniper';
+    return '';
 }
 
 1;
