@@ -4,7 +4,7 @@ package Replay;
 
 use warnings;
 use strict;
-use base 'Exporter'
+require Exporter;
 use List::MoreUtils qw(natatime);
 use UUID;
 
@@ -117,9 +117,9 @@ sub from_file {
 sub result_winner {
     my $self = shift;
     return 'spy' if $self->{Result} == GAME_RESULT_MISSIONS_WIN 
-        or $self->{Result} == GAME_RESULT_CIVILIAN_SHOT);
+        or $self->{Result} == GAME_RESULT_CIVILIAN_SHOT;
     return 'sniper' if $self->{Result} == GAME_RESULT_SPY_SHOT
-        or $self->{Result} == GAME_RESULT_SPY_TIMEOUT);
+        or $self->{Result} == GAME_RESULT_SPY_TIMEOUT;
     return 'incomplete';
 }
 
