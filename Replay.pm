@@ -56,28 +56,77 @@ our %EXPORT_TAGS = (enums => [
     REPLAY_FLAG_COMPRESSION_NONE,
 ]);
 
-use constant FORMAT => [
+# These first 16 bytes will never change
+use constant FORMAT_HEAD => [
     ReplayFile4CC => 'a4',
     ReplayFileVersion => 'L',
     P2PProtocolVersion => 'L',
     RevnoVersion => 'L',
-    Flags => 'L',
-    Duration => 'f',
-    GameID => 'a16',
-    StartTime => 'L',
-    PlayID => 'S',
-    SpyNameLength => 'C',
-    SniperNameLength => 'C',
-    FlagsVersion => 'L',
-    Result => 'L',
-    PackedGameType => 'L',
-    MapHash => 'L',
-    SelectedMissionsBits => 'L',
-    EnabledMissionsBits => 'L',
-    AchievedMissionsBits => 'L',
-    ClientLatency => 'f',
-    PacketDataSize => 'L',
 ];
+
+# The remainder can change due to game updates
+use constant FORMAT_TAIL => {
+    5 => [
+        Flags => 'L',
+        Duration => 'f',
+        GameID => 'a16',
+        StartTime => 'L',
+        PlayID => 'S',
+        SpyNameLength => 'C',
+        SniperNameLength => 'C',
+        SpyDisplayNameLength => 'C',
+        SniperDisplayNameLength => 'C',
+        Unused => 'S',
+        FlagsVersion => 'L',
+        Result => 'L',
+        PackedGameType => 'L',
+        MapHash => 'L',
+        SelectedMissionsBits => 'L',
+        EnabledMissionsBits => 'L',
+        AchievedMissionsBits => 'L',
+        NumGuests => 'L',
+        StartDurationSeconds => 'L',
+        ClientLatency => 'f',
+        PacketDataSize => 'L',
+    ],
+
+    4 => [
+        Flags => 'L',
+        Duration => 'f',
+        GameID => 'a16',
+        StartTime => 'L',
+        PlayID => 'S',
+        SpyNameLength => 'C',
+        SniperNameLength => 'C',
+        FlagsVersion => 'L',
+        Result => 'L',
+        PackedGameType => 'L',
+        MapHash => 'L',
+        SelectedMissionsBits => 'L',
+        EnabledMissionsBits => 'L',
+        AchievedMissionsBits => 'L',
+        ClientLatency => 'f',
+        PacketDataSize => 'L',
+    ],
+
+    3 => [
+        Flags => 'L',
+        Duration => 'f',
+        GameID => 'a16',
+        StartTime => 'L',
+        PlayID => 'S',
+        SpyNameLength => 'C',
+        SniperNameLength => 'C',
+        Result => 'L',
+        PackedGameType => 'L',
+        MapHash => 'L',
+        SelectedMissionsBits => 'L',
+        EnabledMissionsBits => 'L',
+        AchievedMissionsBits => 'L',
+        ClientLatency => 'f',
+        PacketDataSize => 'L',
+    ],
+};
 
 use constant BYTES => {
     a4 => 4,
@@ -94,7 +143,7 @@ sub from_file {
     my $self = {};
     open my $fh, '<:raw', $file;
 
-    my $it = natatime 2, @{+FORMAT};
+    my $it = natatime 2, @{+FORMAT_HEAD};
     while (my ($name, $format) = $it->()) {
         read $fh, my $bytes, BYTES->{$format};
         $self->{$name} = unpack($format, $bytes);
@@ -103,11 +152,24 @@ sub from_file {
     $self->{ReplayFile4CC} eq 'RPLY'
         or die 'Not a SpyParty Replay!';
 
+    my $tail = FORMAT_TAIL->{$self->{ReplayFileVersion}};
+    $it = natatime 2, @$tail;
+    while (my ($name, $format) = $it->()) {
+        read $fh, my $bytes, BYTES->{$format};
+        $self->{$name} = unpack($format, $bytes);
+    }
+
     read $fh, my $spyname, $self->{SpyNameLength};
     read $fh, my $snipername, $self->{SniperNameLength};
 
-    $self->{SpyName} = $spyname;
-    $self->{SniperName} = $snipername;
+    read $fh, my $dspyname, $self->{SpyDisplayNameLength} || 0;
+    read $fh, my $dsnipername, $self->{SniperDisplayNameLength} || 0;
+
+    $self->{SpyName} = $dspyname;
+    $self->{SniperName} = $dsnipername;
+    $self->{SpyName} ||= $spyname;
+    $self->{SniperName} ||= $snipername;
+
     #UUID::unparse($self->{GameID}, $self->{GameID});
 
     close $fh;
