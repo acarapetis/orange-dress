@@ -25,7 +25,11 @@ my $dbh = DBI->connect("dbi:mysql:database=$db;host=localhost", $user, $pw, {
 my $sth = $dbh->prepare('REPLACE INTO game (id, spy, sniper, result, winner, map, time) VALUES (?,?,?,?,?,?,from_unixtime(?))');
 while (my $file = <>) {
     chomp $file;
-    my $replay = Replay->from_file($file);
+    my $replay = eval { Replay->from_file($file) };
+    if ($@) {
+        print "Error processing $file: $@\n";
+        next;
+    }
     my @row = (
         $replay->{GameID},
         $replay->{SpyName},
