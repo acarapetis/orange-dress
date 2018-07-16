@@ -165,8 +165,11 @@ sub from_file {
     read $fh, my $dspyname, $self->{SpyDisplayNameLength} || 0;
     read $fh, my $dsnipername, $self->{SniperDisplayNameLength} || 0;
 
-    $self->{SpyName} = $dspyname || $spyname;
-    $self->{SniperName} = $dsnipername || $snipername;
+    $self->{SpyName} = $spyname;
+    $self->{SniperName} = $snipername;
+
+    $self->{SpyDisplayName} = $dspyname;
+    $self->{SniperDisplayName} = $dsnipername;
 
     #UUID::unparse($self->{GameID}, $self->{GameID});
 

@@ -1,0 +1,4 @@
+ALTER TABLE game
+ADD COLUMN spy_display VARCHAR(255) AFTER spy;
+ALTER TABLE game
+ADD COLUMN sniper_display VARCHAR(255) AFTER sniper;
