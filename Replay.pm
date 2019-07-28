@@ -66,6 +66,31 @@ use constant FORMAT_HEAD => [
 
 # The remainder can change due to game updates
 use constant FORMAT_TAIL => {
+    6 => [
+        Flags => 'L',
+        Duration => 'f',
+        GameID => 'a16',
+        StartTime => 'L',
+        PlayID => 'S',
+        SpyNameLength => 'C',
+        SniperNameLength => 'C',
+        SpyDisplayNameLength => 'C',
+        SniperDisplayNameLength => 'C',
+        Unused => 'S',
+        FlagsVersion => 'L',
+        Result => 'L',
+        PackedGameType => 'L',
+        MapHash => 'L',
+        VenueVariant => 'L',
+        SelectedMissionsBits => 'L',
+        EnabledMissionsBits => 'L',
+        AchievedMissionsBits => 'L',
+        NumGuests => 'L',
+        StartDurationSeconds => 'L',
+        ClientLatency => 'f',
+        PacketDataSize => 'L',
+    ],
+
     5 => [
         Flags => 'L',
         Duration => 'f',
@@ -159,6 +184,7 @@ sub from_file {
         $self->{$name} = unpack($format, $bytes);
     }
 
+    die "Couldn't parse everything we expected to" unless $self->{SpyNameLength};
     read $fh, my $spyname, $self->{SpyNameLength};
     read $fh, my $snipername, $self->{SniperNameLength};
 
